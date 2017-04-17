@@ -1,7 +1,7 @@
 # Installing puppetdb and puppetexplorer as modules:
 #puppet module install puppetlabs-puppetdb --version 5.1.2
 #puppet module install spotify-puppetexplorer --version 1.1.1
-
+#puppet module install puppetlabs-apache --version 1.11.0
 
 node epbyminw2976.minsk.epam.com {
 
