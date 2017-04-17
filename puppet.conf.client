@@ -1,0 +1,5 @@
+[main]
+certname = agent
+server = master
+environment = prod
+runinterval = 3m 
