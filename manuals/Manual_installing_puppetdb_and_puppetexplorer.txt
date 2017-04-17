@@ -1,0 +1,184 @@
+####Installing and configuring Postgresql>=9.4. Last version here https://yum.postgresql.org/repopackages.php
+rpm -Uvh https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
+yum install postgresql96-server postgresql96-contrib
+
+#Configuring Postgresql according to a manual https://docs.puppet.com/puppetdb/4.4/configure.html#using-postgresql
+systmctl postgresql-9.6 initdb
+systemctl postgresql-9.6 initdb
+/usr/pgsql-9.6/bin/postgresql96-setup initdb
+service postgresql-9.6 start
+chkconfig postgresql-9.6 on
+
+#Creating a user and database as follows:
+sudo -u postgres sh
+createuser -DRSP puppetdb
+createdb -E UTF8 -O puppetdb puppetdb
+exit
+
+
+#Installing the RegExp-optimized index extension pg_trgm.
+sudo -u postgres sh
+psql puppetdb -c 'create extension pg_trgm'
+exit
+
+
+#Modifing the pg_hba.conf file to allow for MD5 authentication
+vi /var/lib/pgsql/9.6/data/pg_hba.conf 
+
+## TYPE  DATABASE   USER   CIDR-ADDRESS  METHOD
+#local   all        all                  md5
+#host    all        all    127.0.0.1/32  md5
+#host    all        all    ::1/128       md5
+
+#Restart Postgresql
+service postgresql-9.6 restart
+   
+
+#Configuring PuppetDB to use this database, put the following in the [database] section:
+vi /etc/puppetlabs/puppetdb/conf.d/database.ini 
+#subname = //<HOST>:<PORT>/<DATABASE>
+#username = <USERNAME>
+#password = <PASSWORD>
+
+puppet resource service puppetdb ensure=running enable=true
+
+
+
+####Connecting Puppet master to PuppetDB (full documentation here: https://docs.puppet.com/puppetdb/4.4/connect_puppet_master.html)
+#Enable the Puppet Collection repo (if not yet) and then install the puppetdb-termini package
+puppet resource package puppetdb-termini ensure=latest
+
+vi /etc/puppetlabs/puppet/puppetdb.conf 
+
+#[main]
+#server_urls = https://master.kuzniatsou.local:8081/
+#soft_write_failure = false
+
+
+vi /etc/puppetlabs/puppet/puppet.conf 
+
+#[master]
+#vardir = /opt/puppetlabs/server/data/puppetserver
+#logdir = /var/log/puppetlabs/puppetserver
+#rundir = /var/run/puppetlabs/puppetserver
+#pidfile = /var/run/puppetlabs/puppetserver/puppetserver.pid
+#codedir = /etc/puppetlabs/code
+#storeconfigs = true
+#storeconfigs_backend = puppetdb
+#reports = store,puppetdb
+
+vi puppet master --configprint route_file
+
+#master:
+#  facts:
+#    terminus: puppetdb
+#    cache: yaml
+
+#Ensure proper ownership of the config files
+chown -R puppet:puppet `puppet config print confdir`
+
+
+#Checking:
+#Restart Puppet master
+systemctl restart puppetserver
+systemctl restart puppet
+
+
+Your Puppet master is now using PuppetDB to store and retrieve catalogs, facts, and exported resources. You can test your setup by triggering a Puppet agent run on an arbitrary node, then logging into your PuppetDB server and viewing the /var/log/puppetlabs/puppetdb/puppetdb.log file, which will include calls to the “replace facts”, “replace catalog”, and “store report” commands
+puppet agent -tv --debug
+less /var/log/puppetlabs/puppetdb/puppetdb.log
+
+
+########################################################################
+
+#Installing puppetexplorer
+#Download zip or clone from git
+wget https://github.com/dalen/puppetexplorer/archive/master.zip $$ unzip master.zip $$ mv puppetexplorer-master puppetexplorer
+
+
+#Installing additional packaes. 
+cd puppetexplorer/
+yum install npm
+npm install
+
+
+#Install all necessary dependencies
+npm install -g grunt-cli
+npm install -g grunt-rpm
+npm install grunt@~0.4.1
+npm install eslint@^2.9.0
+#and so on
+npm -g list grunt
+
+#Building an application. All
+grunt --force
+
+#You will get 'dist' directoru with application. Move it to /usr/share/puppetexplorer directory, for example.
+
+#It is possible to use web server provided by puppetexplorer:
+grunt serve --puppetdb=http://master1.kuzniatsou.local:8081/
+
+#However, using Apache, for instance, is preferable
+yum install httpd
+
+#Creating virthost:
+vi /etc/httpd/conf.d/master1.kuzniatsou.local.conf
+
+
+#############
+<VirtualHost *:443>
+  ServerName master1.kuzniatsou.local
+  ## Vhost docroot
+  DocumentRoot "/usr/share/puppetexplorer/dist"
+  ## Directories, there should at least be a declaration for /usr/share/puppetexplorer
+
+  <Directory "/usr/share/puppetexplorer/dist">
+    Options Indexes FollowSymLinks MultiViews
+    AllowOverride None
+    Require all granted
+  </Directory>
+
+  ## Logging
+  ErrorLog "/var/log/httpd/master.kuzniatsou.local_error_ssl.log"
+  ServerSignature Off
+  CustomLog "/var/log/httpd/master.kuzniatsou.local_access_ssl.log" combined
+
+  ProxyRequests Off
+  ProxyPreserveHost Off
+  ProxyPass /api/pdb/query http://localhost:8080/pdb/query
+  ProxyPassReverse /api/pdb/query http://localhost:8080/pdb/query
+  ProxyPass /api/pdb/meta http://localhost:8080/pdb/meta
+  ProxyPassReverse /api/pdb/meta http://localhost:8080/pdb/meta
+  ProxyPass /api/metrics http://localhost:8080/metrics
+  ProxyPassReverse /api/metrics http://localhost:8080/metrics
+
+  RewriteEngine On
+  RewriteRule ^/api/metrics/v1/mbeans/puppetlabs.puppetdb.query.population:type=default,name=(.*)$  http://%{HTTP_HOST}/api/metrics/v1/mbeans/puppetlabs.puppetdb.population:name=$1 [R=301,L]
+
+  ## SSL directives
+  #  SSLEngine on
+  #SSLCertificateFile      "/etc/pki/tls/certs/localhost.crt"
+  #SSLCertificateKeyFile   "/etc/pki/tls/private/localhost.key"
+  #SSLCACertificatePath    "/etc/pki/tls/certs"
+
+  # SSL Proxy directives
+  #  SSLProxyEngine On
+</VirtualHost>
+###########
+
+#For using SSL you should include additional modules to Apache and generate certificates. 
+#Virt host has a rewrite rule for apache. Due to population metric names changed in PuppetDB 4.x (https://docs.puppet.com/puppetdb/4.0/api/metrics/v1/changes-from-puppetdb-v3.html#population-metrics) you can use this workaround:
+#Additional information about this issue: https://github.com/dalen/puppetexplorer/issues/49
+
+
+systemctl restart httpd
+
+
+#For external access don't forget to add rules to the firewall (note, puppetexplorer & apache  modules ignore firewall.d in Centos7 and enable iptables):
+vi /etc/sysconfig/iptables
+iptables -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+
+service iptables restart
+
+#modules add all necessary rules to selinux. By the way, check selinux
+sestatus

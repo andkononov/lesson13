@@ -1,0 +1,60 @@
+# Installing puppetdb and puppetexplorer as modules:
+puppet module install puppetlabs-puppetdb --version 5.1.2
+puppet module install spotify-puppetexplorer --version 1.1.1
+puppet module install puppetlabs-apache --version 1.11.0
+
+
+#for external access don't forget to add rules to the firewall (note, puppetexplorer & apache  modules ignore firewall.d in Centos7 and enable iptables):
+#/etc/sysconfig/iptables
+iptables -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+
+service iptables restart
+
+#modules add all necessary rules to selinux. By the way, check selinux
+sestatus
+
+
+
+
+#Check all configurations using documentation:
+#https://forge.puppet.com/puppetlabs/puppetdb/readme
+#https://forge.puppet.com/spotify/puppetexplorer/readme
+#
+#
+# /etc/puppetlabs/puppet/puppetdb.conf 
+#
+#[main]
+#server_urls = https://master.kuzniatsou.local:8081/
+#soft_write_failure = false
+#
+#
+#
+# /etc/puppetlabs/puppet/puppet.conf 
+#
+#[master]
+#vardir = /opt/puppetlabs/server/data/puppetserver
+#logdir = /var/log/puppetlabs/puppetserver
+#rundir = /var/run/puppetlabs/puppetserver
+#pidfile = /var/run/puppetlabs/puppetserver/puppetserver.pid
+#codedir = /etc/puppetlabs/code
+#storeconfigs = true
+#storeconfigs_backend = puppetdb
+#reports = store,puppetdb
+#
+#
+#
+#/etc/puppetlabs/code/environments/production/manifests/site.pp
+#
+#node master.kuzniatsou.local {
+#  class { 'puppetdb': }
+#  class { 'puppetdb::master::config': }
+#  class { 'puppetexplorer': }
+#  class {'::puppetexplorer':
+#    vhost_options => {
+#      rewrites  => [ { rewrite_rule => ['^/api/metrics/v1/mbeans/puppetlabs.puppetdb.query.population:type=default,name=(.*)$  https://%{HTTP_HOST}/api/metrics/v1/mbeans/puppetlabs.puppetdb.population:name=$1 [R=301,L]'] } ] }
+#  }
+#}
+#                          
+#Last section is a rewrite rule for apache. Due to population metric names changed in PuppetDB 4.x (https://docs.puppet.com/puppetdb/4.0/api/metrics/v1/changes-from-puppetdb-v3.html#population-metrics) you can use this workaround
+#Additional information about this issue: https://github.com/dalen/puppetexplorer/issues/49
+
