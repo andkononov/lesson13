@@ -2,6 +2,7 @@
 
 > **Table of contents:**
 
+> - [**dist**][0] - directory of puppetexplorer app built by Grunt
 > - [**environments**][1] - directory with 2 environments for node1 and node2
 > - [**manuals**][2] - dirctory with manuals 
 > - [**vagrant_scripts**][3] - Vagrant directory of scripts for provisioning VMs
@@ -9,6 +10,7 @@
 > - [**Vagrantfile**][5] - Vagrantfile. Provisioning dns, master, node1, node2 VMs
 > - [**[agent]-node1-puppet.conf**][6] - configuration file of puppet on node1
 > - [**[agent]-node2-puppet.conf**][7] - configuration file of puppet on node2
+> - [**master1.kuzniatsou.local.conf**][12] - Apache virt host for puppetexplorer
 > - [**puppet.conf**][8] - configuration file of puppet on master
 > - [**puppetdb.conf**][9] - configuration file of puppetdb
 
@@ -24,6 +26,7 @@
 ### Main dashboard of the master1.kuzniatsou.local.
 ![alt text](screens/master_main.png "master")
 
+[0]: https://github.com/ngkuznetsov/lesson13/tree/mikalai_kuzniatsou/dist
 [1]: https://github.com/ngkuznetsov/lesson13/tree/mikalai_kuzniatsou/environments
 [2]: https://github.com/ngkuznetsov/lesson13/tree/mikalai_kuzniatsou/manuals
 [3]: https://github.com/ngkuznetsov/lesson13/tree/mikalai_kuzniatsou/vagrant_scripts
@@ -35,3 +38,5 @@
 [9]: https://github.com/ngkuznetsov/lesson13/blob/mikalai_kuzniatsou/puppetdb.conf
 [10]: https://github.com/ngkuznetsov/lesson13/blob/mikalai_kuzniatsou/manuals/Manual_installing_puppetdb_and_puppetexplorer.txt
 [11]: https://github.com/ngkuznetsov/lesson13/blob/mikalai_kuzniatsou/manuals/Manual_installing_puppetdb_and_puppetexplorer.txt
+[12]: https://github.com/ngkuznetsov/lesson13/blob/mikalai_kuzniatsou/master1.kuzniatsou.local.conf
+
