@@ -44,7 +44,6 @@ Vagrant.configure('2') do |config|
       puppet module install spotify-puppetexplorer --version 1.1.1
       puppet module install puppet-nginx --version 0.6.0 --environment prod
       puppet agent -t
-#      systemctl stop iptables
       SHELL
   end
 
