@@ -7,7 +7,7 @@ Vagrant.configure('2') do |config|
 
   # define puppet master server
   config.vm.define 'master' do |master|
-    master.vm.hostname = 'master.lab'
+    master.vm.hostname = 'master'
     master.vm.network 'private_network', ip: '192.168.0.100'
     master.vm.provider 'virtualbox' do |v|
       v.name = 'master'
