@@ -1,0 +1,1 @@
+{"rsync":{"/vagrant":{"type":"rsync","guestpath":"/vagrant","hostpath":"/home/student/PUPPET_LABS/Lab2/server","disabled":false,"__vagrantfile":true,"owner":"vagrant","group":"vagrant"}}}
