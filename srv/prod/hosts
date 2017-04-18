@@ -1,0 +1,7 @@
+127.0.0.1       srv     srv
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+# ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+192.168.100.100 srv.minsk.epam.com puppet
+192.168.100.101 agent.minsk.epam.com
+
